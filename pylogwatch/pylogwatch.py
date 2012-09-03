@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Main executable
 
-from logwlib import PyLogIniRaven
+import config
+
+from logwlib import PyLogConf
 
 if __name__=='__main__':
-    pl = PyLogIniRaven('logw.ini')
+    pl = PyLogConf(config)
     pl.run()

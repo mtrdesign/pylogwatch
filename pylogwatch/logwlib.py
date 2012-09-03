@@ -1,10 +1,17 @@
-import os, sys, sqlite3, itertools
+import os, sys, sqlite3, itertools, time
+from datetime import datetime
 import ConfigParser
 from raven import Client
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 proj_path = lambda x: os.path.abspath(os.path.join(PROJECT_DIR,x))
+
+def item_import(name):
+    d = name.rfind(".")
+    classname = name[d+1:]
+    m = __import__(name[:d], globals(), locals(), [classname])
+    return getattr(m, classname)
 
 class PyLog (object):
     def __init__ (self, filenames, dbname = 'logw.db', filetable = 'file_cursor', eventtable = 'events'):
@@ -54,6 +61,7 @@ class PyLog (object):
         return
 
     def process_lines (self, fname, lines):
+        """Dummy line processor - should be overridden"""
         print '##### Processed %s:' % fname
         for line in lines:
             print line
@@ -99,14 +107,37 @@ class PyLog (object):
             if rotated:
                 rotated.close()
 
-class PyLogIniRaven (PyLog):
-    def __init__ (self, conffile):
-        self.conf = ConfigParser.SafeConfigParser(allow_no_value=True)
-        self.conf.read (proj_path(conffile))
-        self.client = Client (self.conf.get ('raven','dsn'))
-        return super(PyLogIniRaven, self).__init__ ([v[0] for v in self.conf.items('files')])
+
+class PyLogConf (PyLog):
+    def __init__ (self, conf):
+        self.conf = conf
+        self.client = Client (conf.RAVEN['dsn'])
+        self.available_formatters = [item_import(f) for f in self.conf.FORMATTERS]
+        return super(PyLogConf, self).__init__ (self.conf.FILES)
+
+    def get_file_signature(self, fname):
+        maxcount = 10
+        count = 0
+        result = []
+        with open(fname) as f:
+            while count < maxcount:
+               result.append(f.readline())
+               count+=1
+        return result
+        
 
     def process_lines (self, fname, lines):
+        enabled_formatters = []
+        sig = self.get_file_signature(fname)
+        for F in self.available_formatters:
+            fobj = F (fname, sig)
+            if fobj.active:
+                enabled_formatters.append(fobj)
+         
         for line in lines:
-            self.client.capture('Message', message = line, data = {'logger':fname})
+            data = {'event_type':'Message', 'message': line,'data' : {'logger':fname}}
+            for fobj in enabled_formatters:
+                fobj.format_line(line, data)
+            print data
+            self.client.capture(**data)
 
