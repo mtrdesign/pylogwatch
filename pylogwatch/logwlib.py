@@ -121,10 +121,10 @@ class PyLogConf (PyLog):
         result = []
         with open(fname) as f:
             while count < maxcount:
-               result.append(f.readline())
-               count+=1
+                result.append(f.readline())
+                count+=1
         return result
-        
+
 
     def process_lines (self, fname, lines):
         enabled_formatters = []
@@ -133,7 +133,7 @@ class PyLogConf (PyLog):
             fobj = F (fname, sig)
             if fobj.active:
                 enabled_formatters.append(fobj)
-         
+
         for line in lines:
             data = {'event_type':'Message', 'message': line,'data' : {'logger':fname}}
             for fobj in enabled_formatters:
