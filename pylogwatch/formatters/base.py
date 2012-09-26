@@ -43,7 +43,7 @@ class SysLogDateFormatter (BaseFormatter):
         self.dt = datetime.fromtimestamp(time.mktime(timestruct))
         datadict ['date']=self.dt
         datadict ['message'] = datadict ['message'].replace(raw_datestr ,'')
-        datadict.setdefault('extra',{})['Raw Datestring'] = raw_datestr
+        datadict.setdefault('extra',{})['raw_datestring'] = raw_datestr
 
 
 class SysLogProcFormatter (SysLogDateFormatter):
