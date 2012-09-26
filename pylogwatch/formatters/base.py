@@ -36,7 +36,10 @@ class SysLogDateFormatter (BaseFormatter):
         parts = line.split()
         raw_datestr = ' '.join (parts[:3]) + ' '
         datestr = raw_datestr + unicode(self.year)
-        timestruct = time.strptime(datestr, "%b %d %H:%M:%S %Y")
+        try:
+            timestruct = time.strptime(datestr, "%b %d %H:%M:%S %Y")
+        except ValueError: # Uh-oh, line with an unexpected format
+            return datadict
         self.dt = datetime.fromtimestamp(time.mktime(timestruct))
         datadict ['date']=self.dt
         datadict ['message'] = datadict ['message'].replace(raw_datestr ,'')
