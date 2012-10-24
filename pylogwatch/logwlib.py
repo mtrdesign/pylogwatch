@@ -1,6 +1,5 @@
 import os, sys, sqlite3, itertools, time
 from datetime import datetime
-import ConfigParser
 from raven import Client
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -8,6 +7,7 @@ PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 proj_path = lambda x: os.path.abspath(os.path.join(PROJECT_DIR,x))
 
 def item_import(name):
+    print name
     d = name.rfind(".")
     classname = name[d+1:]
     m = __import__(name[:d], globals(), locals(), [classname])
@@ -34,6 +34,7 @@ class PyLog (object):
 
     def readlines (self, f, lastpos = 0):
         """Read full lines from the file object f starting from lastpos"""
+        self.save_fileinfo (f.name, os.stat(f.name)[1], lastpos)
         f.seek(lastpos)
         result = []
         for line in f:
@@ -112,8 +113,12 @@ class PyLogConf (PyLog):
     def __init__ (self, conf):
         self.conf = conf
         self.client = Client (conf.RAVEN['dsn'])
-        self.available_formatters = [item_import(f) for f in self.conf.FORMATTERS]
-        return super(PyLogConf, self).__init__ (self.conf.FILES)
+        self.formatters = {}
+        for k,v in self.conf.FILE_FORMATTERS.iteritems():
+            if isinstance(v,str):
+                raise ValueError ('Please use a list or a tuple for the file formatters values')
+            self.formatters[k] = [item_import(i)() for i in v]
+        return super(PyLogConf, self).__init__ (self.conf.FILE_FORMATTERS.keys())
 
     def get_file_signature(self, fname):
         maxcount = 10
@@ -125,19 +130,15 @@ class PyLogConf (PyLog):
                 count+=1
         return result
 
-
     def process_lines (self, fname, lines):
-        enabled_formatters = []
-        sig = self.get_file_signature(fname)
-        for F in self.available_formatters:
-            fobj = F (fname, sig)
-            if fobj.active:
-                enabled_formatters.append(fobj)
-
         for line in lines:
-            data = {'event_type':'Message', 'message': line,'data' : {'logger':fname}}
-            for fobj in enabled_formatters:
-                fobj.format_line(line, data)
-            print data
+            paramdict = {}
+            data = {'event_type':'Message', 'message': line.replace('%','%%'), 'data' :{'logger':fname}}
+            for fobj in self.formatters[fname]:
+                fobj.format_line(line, data, paramdict)
+            if paramdict:
+                data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])
+            if self.conf.DEBUG:
+                print data
             self.client.capture(**data)
 
