@@ -9,7 +9,7 @@ So far the config format is quite simple. It currently looks like this:
 DEBUG=True
 
 RAVEN = {
-  'dsn':'https://fe0c02cab24443609c5a5f6a03accee3:c90774180ad24bf8b404e9627f81ebf9@sentry.mtrdev.com/10',
+  'dsn':'<RAVEN_DSN_URL>',
 
 }
 
