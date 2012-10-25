@@ -41,7 +41,7 @@ class SysLogDateFormatter (BaseFormatter):
         except ValueError: # Uh-oh, line with an unexpected format
             return datadict
         datadict ['date'] = dt
-        datadict ['message'] = self.replace_param (line, datadict ['message'], dt, paramdict)
+        datadict ['message'] = self.replace_param (line, datadict ['message'], raw_datestr, paramdict)
 
 class SysLogProcFormatter (SysLogDateFormatter):
     PROC_RE = re.compile(r'(\[[0-9.]+\])')
