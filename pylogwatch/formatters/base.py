@@ -37,10 +37,9 @@ class SysLogDateFormatter (BaseFormatter):
         raw_datestr = ' '.join (parts[:3]) + ' '
         datestr = raw_datestr + unicode(self.year)
         try:
-            timestruct = parse(datestr)
+            dt = parse(datestr)
         except ValueError: # Uh-oh, line with an unexpected format
             return datadict
-        dt = datetime.fromtimestamp(time.mktime(timestruct))
         datadict ['date'] = dt
         datadict ['message'] = self.replace_param (line, datadict ['message'], dt, paramdict)
 
