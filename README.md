@@ -6,25 +6,23 @@ Config
 ==========
 So far the config format is quite simple. It currently looks like this:
 ```
-DEBUG=True
+    DEBUG=True
 
-RAVEN = {
-  'dsn':'<RAVEN_DSN_URL>',
+    RAVEN = {
+      'dsn':'<RAVEN_DSN_URL>',
+    }
 
-}
+    # List of files to monitor and their associated formatters
+    FILE_FORMATTERS = {
+        '/var/log/syslog': ('formatters.base.SysLogDateFormatter',
+                            'formatters.base.SysLogProcFormatter',),
 
-# List of files to monitor and their associated formatters
-FILE_FORMATTERS = {
-    '/var/log/syslog': ('formatters.base.SysLogDateFormatter',
-                        'formatters.base.SysLogProcFormatter',),
+        '/var/log/auth.log': ('formatters.base.SysLogDateFormatter',
+                            'formatters.base.SysLogProcFormatter',),
 
-    '/var/log/auth.log': ('formatters.base.SysLogDateFormatter',
-                        'formatters.base.SysLogProcFormatter',),
+        '/var/log/apache/error.log': ('formatters.web.ApacheErrorLogFormatter',),
 
-    '/var/log/apache/error.log': ('formatters.web.ApacheErrorLogFormatter',),
-
-}
-
+    }
 
 ```
 
