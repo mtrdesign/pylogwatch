@@ -1,2 +1,4 @@
-recursive-include *.txt *.py
-prune pylogwatch/config.p
+include pylogwatch *.py *.txt 
+recursive-include pylogwatch/formatters *.py
+include bin *.py 
+exclude pylogwatch/config.py

@@ -2,3 +2,5 @@ logw.db
 *.py[oc]
 logw.ini
 config.py
+MANIFEST
+dist/
