@@ -1,3 +1,4 @@
+include  README.md
 include pylogwatch *.py *.txt 
 recursive-include pylogwatch/formatters *.py
 include bin *.py 

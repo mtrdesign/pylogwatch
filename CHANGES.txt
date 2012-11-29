@@ -1,1 +1,1 @@
-v0.1.0, Nov 29 2012 -- Initial PyPI release.
+v0.1, Nov 29 2012 -- Initial PyPI release.

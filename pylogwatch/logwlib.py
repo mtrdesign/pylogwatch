@@ -1,10 +1,14 @@
 import os, sys, sqlite3, itertools, time
 from datetime import datetime
-from raven import Client
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
-
 proj_path = lambda x: os.path.abspath(os.path.join(PROJECT_DIR,x))
+# Check if we are bundled together with raven, and add our dir to the pythonpath if we are
+if os.path.exists(proj_path( 'raven')):
+    sys.path.append(PROJECT_DIR)
+
+from raven import Client
+
 
 def item_import(name):
     print name
