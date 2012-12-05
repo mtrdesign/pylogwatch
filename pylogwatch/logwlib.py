@@ -1,10 +1,10 @@
+# Python 2.5 compatibility
+from __future__ import with_statement
+
 # Python version
 import sys
 if sys.version_info < (2, 5):
     raise "Required python 2.5 or greater"
-if sys.version_info < (2, 6):
-    from __future__ import with_statement
-
 
 import os, sqlite3, itertools, time
 from datetime import datetime
