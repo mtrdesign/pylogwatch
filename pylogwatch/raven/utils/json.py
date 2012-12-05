@@ -2,16 +2,27 @@
 raven.utils.json
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
+from __future__ import absolute_import
+
 import datetime
-import simplejson
 import uuid
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
-class BetterJSONEncoder(simplejson.JSONEncoder):
+try:
+    JSONDecodeError = json.JSONDecodeError
+except AttributeError:
+    JSONDecodeError = ValueError
+
+
+class BetterJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, uuid.UUID):
             return obj.hex
@@ -27,8 +38,8 @@ def better_decoder(data):
 
 
 def dumps(value, **kwargs):
-    return simplejson.dumps(value, cls=BetterJSONEncoder, **kwargs)
+    return json.dumps(value, cls=BetterJSONEncoder, **kwargs)
 
 
 def loads(value, **kwargs):
-    return simplejson.loads(value, object_hook=better_decoder)
+    return json.loads(value, object_hook=better_decoder)

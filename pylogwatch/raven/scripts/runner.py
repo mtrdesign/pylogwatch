@@ -12,18 +12,20 @@ import logging
 import os
 import sys
 import pwd
-import simplejson as json
 from optparse import OptionParser
 
 from raven import Client
+from raven.utils.json import json
+
 
 def store_json(option, opt_str, value, parser):
     try:
         value = json.loads(value)
     except ValueError:
-        print "Invalid was used for option %s.  Received: %s" % (opt_str, value)
+        print "Invalid JSON was used for option %s.  Received: %s" % (opt_str, value)
         sys.exit(1)
     setattr(parser.values, option.dest, value)
+
 
 def main():
     root = logging.getLogger('sentry.errors')
@@ -32,7 +34,9 @@ def main():
 
     parser = OptionParser()
     parser.add_option("--data", action="callback", callback=store_json,
-                      type="string", nargs=1, dest="data")
+        type="string", nargs=1, dest="data")
+    parser.add_option("--tags", action="callback", callback=store_json,
+        type="string", nargs=1, dest="tags")
     (opts, args) = parser.parse_args()
 
     dsn = ' '.join(args[1:]) or os.environ.get('SENTRY_DSN')
@@ -56,23 +60,26 @@ def main():
         print "Error: All values must be set!"
         sys.exit(1)
 
+    data = opts.data or {
+        'culprit': 'raven.scripts.runner',
+        'logger': 'raven.test',
+        'sentry.interfaces.Http': {
+            'method': 'GET',
+            'url': 'http://example.com',
+        }
+    }
+
     print 'Sending a test message...',
     ident = client.get_ident(client.captureMessage(
         message='This is a test message generated using ``raven test``',
-        data=opts.data or {
-            'culprit': 'raven.scripts.runner',
-            'logger': 'raven.test',
-            'sentry.interfaces.Http': {
-                'method': 'GET',
-                'url': 'http://example.com',
-            }
-        },
+        data=data,
         level=logging.INFO,
         stack=True,
+        tags=opts.tags,
         extra={
             'user': pwd.getpwuid(os.geteuid())[0],
             'loadavg': os.getloadavg(),
-        }
+        },
     ))
 
     if client.state.did_fail():

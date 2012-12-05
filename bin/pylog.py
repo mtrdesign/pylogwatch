@@ -19,6 +19,5 @@ if __name__=='__main__':
     p.add_option('--config', '-c', default="config.py", help="Filesystem path to (python) configuration file [default: %default]")
     options, arguments = p.parse_args()
     cfgmod = load_cfg_module(options.config)
-    print cfgmod.FILES
     pl = PyLogConf(cfgmod)
     pl.run()

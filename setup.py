@@ -2,11 +2,11 @@ from distutils.core import setup
 
 setup(
     name='PyLogWatch',
-    version='0.1.2-alpha',
+    version='0.1.6-alpha',
     author='E. Filipov, MTR Design',
     author_email='pylogwatch@mtr-design.com',
     packages=['pylogwatch','pylogwatch.formatters'],
-    scripts=['bin/pylogwatch.py'],
+    scripts=['bin/pylog.py'],
     url='http://pypi.python.org/pypi/PyLogWatch/',
     license='LICENSE.txt',
     description='Python utility to parse log files and send them to a Sentry server.',

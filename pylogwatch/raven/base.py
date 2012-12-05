@@ -2,7 +2,7 @@
 raven.base
 ~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -13,20 +13,21 @@ import datetime
 import hashlib
 import logging
 import os
+import sys
 import time
 import urllib2
 import uuid
 import warnings
-from urlparse import urlparse
 
 import raven
 from raven.conf import defaults
-from raven.utils import json, varmap, get_versions, get_auth_header
+from raven.utils import json, get_versions, get_auth_header
 
-from raven.utils.encoding import shorten, to_string
+from raven.utils.encoding import to_string
 from raven.utils.serializer import transform
 from raven.utils.stacks import get_stack_info, iter_stack_frames, \
   get_culprit
+from raven.utils.urlparse import urlparse
 from raven.transport.registry import TransportRegistry, default_transports
 
 __all__ = ('Client',)
@@ -136,7 +137,7 @@ class Client(object):
             name=None, auto_log_stacks=None, key=None,
             string_max_length=None, list_max_length=None, site=None,
             public_key=None, secret_key=None, processors=None, project=None,
-            dsn=None, **kwargs):
+            dsn=None, context=None, **kwargs):
         # configure loggers first
         cls = self.__class__
         self.state = ClientState()
@@ -157,7 +158,7 @@ class Client(object):
 
         if dsn is None and os.environ.get('SENTRY_DSN'):
             msg = "Configuring Raven from environment variable 'SENTRY_DSN'"
-            self.logger.info(msg)
+            self.logger.debug(msg)
             dsn = os.environ['SENTRY_DSN']
 
         if dsn:
@@ -165,16 +166,12 @@ class Client(object):
             urlparts = urlparse(dsn)
             msg = "Configuring Raven for host: %s://%s:%s" % (urlparts.scheme,
                     urlparts.netloc, urlparts.path)
-            self.logger.info(msg)
+            self.logger.debug(msg)
             options = raven.load(dsn, transport_registry=self._registry)
             servers = options['SENTRY_SERVERS']
             project = options['SENTRY_PROJECT']
             public_key = options['SENTRY_PUBLIC_KEY']
             secret_key = options['SENTRY_SECRET_KEY']
-
-        # servers may be set to a NoneType (for Django)
-        if servers and not (key or (secret_key and public_key)):
-            self.logger.info('Raven is not configured (disabled). Please see documentation for more information.')
 
         if kwargs.get('timeout') is not None:
             warnings.warn('The ``timeout`` option no longer does anything. Pass the option to your transport instead.')
@@ -196,9 +193,16 @@ class Client(object):
         self.public_key = public_key
         self.secret_key = secret_key
         self.project = project or defaults.PROJECT
+        if context is None:
+            context = {'sys.argv': sys.argv[:]}
+        self.context = context
 
         self.processors = processors or defaults.PROCESSORS
         self.module_cache = ModuleProxyCache()
+
+        # servers may be set to a NoneType (for Django)
+        if not self.is_enabled():
+            self.logger.info('Raven is not configured (disabled). Please see documentation for more information.')
 
     @classmethod
     def register_scheme(cls, scheme, transport_class):
@@ -264,10 +268,7 @@ class Client(object):
 
             data.update({
                 'sentry.interfaces.Stacktrace': {
-                    'frames': varmap(lambda k, v: shorten(v,
-                        string_length=self.string_max_length,
-                        list_length=self.list_max_length),
-                    get_stack_info(frames))
+                    'frames': get_stack_info(frames)
                 },
             })
 
@@ -278,17 +279,20 @@ class Client(object):
             )
 
         if not data.get('level'):
-            data['level'] = logging.ERROR
+            data['level'] = kwargs.get('level') or logging.ERROR
         data['modules'] = get_versions(self.include_paths)
         data['server_name'] = self.name
         data['tags'] = tags
         data.setdefault('extra', {})
         data.setdefault('level', logging.ERROR)
 
-        # Shorten lists/strings
+        # Add extra context
+        if self.context:
+            for k, v in self.context.iteritems():
+                data['extra'].setdefault(k, v)
+
         for k, v in extra.iteritems():
-            data['extra'][k] = shorten(v, string_length=self.string_max_length,
-                    list_length=self.list_max_length)
+            data['extra'][k] = v
 
         if culprit:
             data['culprit'] = culprit
@@ -332,7 +336,8 @@ class Client(object):
         return data
 
     def transform(self, data):
-        return transform(data)
+        return transform(data, list_max_length=self.list_max_length,
+            string_max_length=self.string_max_length)
 
     def capture(self, event_type, data=None, date=None, time_spent=None,
                 extra=None, stack=None, public_key=None, tags=None, **kwargs):
@@ -470,17 +475,20 @@ class Client(object):
             warnings.warn('Raven client has no remote servers configured')
             return
 
+        client_string = 'raven-python/%s' % (raven.VERSION,)
+
         if not auth_header:
             timestamp = time.time()
             auth_header = get_auth_header(
                 protocol=self.protocol_version,
                 timestamp=timestamp,
-                client='raven-python/%s' % (raven.VERSION,),
+                client=client_string,
                 api_key=public_key or self.public_key
             )
 
         for url in self.servers:
             headers = {
+                'User-Agent': client_string,
                 'X-Sentry-Auth': auth_header,
                 'Content-Type': 'application/octet-stream',
             }

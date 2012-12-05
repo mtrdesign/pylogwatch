@@ -2,15 +2,22 @@
 raven.conf
 ~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
 import logging
-import urlparse
-
+from raven.utils.urlparse import urlparse
 
 __all__ = ('load', 'setup_logging')
+
+EXCLUDE_LOGGER_DEFAULTS = (
+    'raven',
+    'gunicorn',
+    'south',
+    'sentry.errors',
+    'django.request',
+)
 
 
 # TODO (vng): this seems weirdly located in raven.conf.  Seems like
@@ -36,7 +43,7 @@ def load(dsn, scope=None, transport_registry=None):
         from raven.transport import TransportRegistry, default_transports
         transport_registry = TransportRegistry(default_transports)
 
-    url = urlparse.urlparse(dsn)
+    url = urlparse(dsn)
 
     if not transport_registry.supported_scheme(url.scheme):
         raise ValueError('Unsupported Sentry DSN scheme: %r' % url.scheme)
@@ -49,10 +56,7 @@ def load(dsn, scope=None, transport_registry=None):
     return scope
 
 
-def setup_logging(handler, exclude=['raven',
-                                    'gunicorn',
-                                    'south',
-                                    'sentry.errors']):
+def setup_logging(handler, exclude=EXCLUDE_LOGGER_DEFAULTS):
     """
     Configures logging to pipe to Sentry.
 

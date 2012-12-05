@@ -1,4 +1,4 @@
-from formatters.base import BaseFormatter
+from pylogwatch.formatters.base import BaseFormatter
 from dateutil.parser import parse
 
 import logging

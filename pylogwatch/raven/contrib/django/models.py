@@ -1,21 +1,21 @@
 """
 raven.contrib.django.models
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Acts as an implicit hook for Django installs.
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
 from __future__ import absolute_import
 
+from hashlib import md5
 import sys
 import logging
 import warnings
 
 from django.conf import settings as django_settings
-from django.utils.hashcompat import md5_constructor
 
 logger = logging.getLogger('sentry.errors.client')
 
@@ -120,7 +120,7 @@ def get_client(client=None):
         options.setdefault('timeout', ga('TIMEOUT'))
         options.setdefault('name', ga('NAME'))
         options.setdefault('auto_log_stacks', ga('AUTO_LOG_STACKS'))
-        options.setdefault('key', ga('KEY', md5_constructor(django_settings.SECRET_KEY).hexdigest()))
+        options.setdefault('key', ga('KEY', md5(django_settings.SECRET_KEY).hexdigest()))
         options.setdefault('string_max_length', ga('MAX_LENGTH_STRING'))
         options.setdefault('list_max_length', ga('MAX_LENGTH_LIST'))
         options.setdefault('site', ga('SITE'))
@@ -201,7 +201,8 @@ def register_handlers():
 
 
 def register_serializers():
-    import raven.contrib.django.serializers  # force import so serializers can call register
+    # force import so serializers can call register
+    import raven.contrib.django.serializers  # NOQA
 
 if 'raven.contrib.django' in django_settings.INSTALLED_APPS:
     # If we've explicitly enabled signals, or we're not running DEBUG, register handlers

@@ -1,4 +1,12 @@
-import os, sys, sqlite3, itertools, time
+# Python version
+import sys
+if sys.version_info < (2, 5):
+    raise "Required python 2.5 or greater"
+if sys.version_info < (2, 6):
+    from __future__ import with_statement
+
+
+import os, sqlite3, itertools, time
 from datetime import datetime
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -11,7 +19,6 @@ from raven import Client
 
 
 def item_import(name):
-    print name
     d = name.rfind(".")
     classname = name[d+1:]
     m = __import__(name[:d], globals(), locals(), [classname])
@@ -27,7 +34,7 @@ class PyLog (object):
 
     def init_db (self, dbname):
         """Set up the DB"""
-        conn = sqlite3.connect (proj_path(dbname))
+        conn = sqlite3.connect (dbname)
         curs = conn.cursor()
         sql = 'create table if not exists file_cursor (filename TEXT PRIMARY KEY, inode INTEGER, lastbyte INTEGER, updated INTEGER)'
         curs.execute (sql)
@@ -52,7 +59,6 @@ class PyLog (object):
     def get_fileinfo (self, fname):
         self.curs.execute ('SELECT filename, inode, lastbyte from file_cursor where filename=?', [fname,])
         result = self.curs.fetchone()
-        print result
         if result and len(result)==3:
             f, inode, lastbyte = result
             return inode,lastbyte
@@ -122,7 +128,8 @@ class PyLogConf (PyLog):
             if isinstance(v,str):
                 raise ValueError ('Please use a list or a tuple for the file formatters values')
             self.formatters[k] = [item_import(i)() for i in v]
-        return super(PyLogConf, self).__init__ (self.conf.FILE_FORMATTERS.keys())
+        dbname = os.path.join(os.path.dirname(conf.__file__),'pylogwatch.db')
+        return super(PyLogConf, self).__init__ (self.conf.FILE_FORMATTERS.keys(), dbname = dbname)
 
     def get_file_signature(self, fname):
         maxcount = 10

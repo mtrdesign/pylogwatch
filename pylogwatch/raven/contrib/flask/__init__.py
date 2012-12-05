@@ -2,7 +2,7 @@
 raven.contrib.flask
 ~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -29,6 +29,7 @@ def make_client(client_cls, app, dsn=None):
         secret_key=app.config.get('SENTRY_SECRET_KEY'),
         project=app.config.get('SENTRY_PROJECT'),
         site=app.config.get('SENTRY_SITE_NAME'),
+        processors=app.config.get('SENTRY_PROCESSORS'),
         dsn=dsn or app.config.get('SENTRY_DSN') or os.environ.get('SENTRY_DSN'),
     )
 
@@ -95,10 +96,20 @@ class Sentry(object):
 
         got_request_exception.connect(self.handle_exception, sender=app)
 
+        if not hasattr(app, 'extensions'):
+            app.extensions = {}
+        app.extensions['sentry'] = self
+
     def captureException(self, *args, **kwargs):
         assert self.client, 'captureException called before application configured'
+        data = kwargs.get('data')
+        if data is None:
+            kwargs['data'] = get_data_from_request(request)
         return self.client.captureException(*args, **kwargs)
 
     def captureMessage(self, *args, **kwargs):
         assert self.client, 'captureMessage called before application configured'
+        data = kwargs.get('data')
+        if data is None:
+            kwargs['data'] = get_data_from_request(request)
         return self.client.captureMessage(*args, **kwargs)

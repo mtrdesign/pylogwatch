@@ -2,14 +2,14 @@
 raven.contrib.celery
 ~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
 try:
     from celery.task import task
 except ImportError:
-    from celery.decorators import task
+    from celery.decorators import task  # NOQA
 from celery.signals import after_setup_logger, task_failure
 from raven.base import Client
 from raven.handlers.logging import SentryHandler

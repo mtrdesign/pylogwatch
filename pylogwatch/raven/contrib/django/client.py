@@ -2,7 +2,7 @@
 raven.contrib.django.client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -26,7 +26,7 @@ class DjangoClient(Client):
     logger = logging.getLogger('sentry.errors.client.django')
 
     def is_enabled(self):
-        return self.servers or 'sentry' in settings.INSTALLED_APPS
+        return bool(self.servers or 'sentry' in settings.INSTALLED_APPS)
 
     def get_user_info(self, request):
         if request.user.is_authenticated():
@@ -96,7 +96,7 @@ class DjangoClient(Client):
 
         result = super(DjangoClient, self).capture(event_type, **kwargs)
 
-        if is_http_request:
+        if is_http_request and result:
             # attach the sentry object to the request
             request.sentry = {
                 'project_id': data.get('project', self.project),

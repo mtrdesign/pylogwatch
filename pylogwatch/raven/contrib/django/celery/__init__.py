@@ -2,7 +2,7 @@
 raven.contrib.django.celery
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -12,7 +12,7 @@ from raven.contrib.django.models import get_client
 try:
     from celery.task import task
 except ImportError:
-    from celery.decorators import task
+    from celery.decorators import task  # NOQA
 
 
 class CeleryClient(CeleryMixin, DjangoClient):

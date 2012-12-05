@@ -4,7 +4,7 @@ raven.conf.defaults
 
 Represents the default values for all Sentry settings.
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -25,7 +25,10 @@ TIMEOUT = 5
 # TODO: this is specific to Django
 CLIENT = 'raven.contrib.django.DjangoClient'
 
-NAME = socket.gethostname()
+# Not all environments have access to socket module, for example Google App Engine
+# Need to check to see if the socket module has ``gethostname``, if it doesn't we
+# will set it to None and require it passed in to ``Client`` on initializtion.
+NAME = socket.gethostname() if hasattr(socket, 'gethostname') else None
 
 # Superuser key -- will be used if set, otherwise defers to
 # SECRET_KEY and PUBLIC_KEY

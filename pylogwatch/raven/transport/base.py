@@ -2,18 +2,29 @@
 raven.transport.builtins
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
 import logging
 import sys
 import urllib2
-from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
+
+try:
+    # Google App Engine blacklists parts of the socket module, this will prevent
+    # it from blowing up.
+    from socket import socket, AF_INET, SOCK_DGRAM, error as socket_error
+    has_socket = True
+except:
+    has_socket = False
 
 try:
     import gevent
-    import gevent.coros
+    # gevent 1.0bN renamed coros to lock
+    try:
+        from gevent.lock import Semaphore
+    except ImportError:
+        from gevent.coros import Semaphore  # NOQA
     has_gevent = True
 except:
     has_gevent = None
@@ -30,6 +41,13 @@ try:
     has_tornado = True
 except:
     has_tornado = False
+
+try:
+    import eventlet
+    from eventlet.green import urllib2 as eventlet_urllib2
+    has_eventlet = True
+except:
+    has_eventlet = False
 
 from raven.conf import defaults
 from raven.transport.exceptions import InvalidScheme
@@ -69,6 +87,8 @@ class UDPTransport(Transport):
     scheme = ['udp']
 
     def __init__(self, parsed_url):
+        if not has_socket:
+            raise ImportError('UDPTransport requires the socket module')
         self.check_scheme(parsed_url)
 
         self._parsed_url = parsed_url
@@ -177,7 +197,7 @@ class GeventedHTTPTransport(HTTPTransport):
     def __init__(self, parsed_url, maximum_outstanding_requests=100):
         if not has_gevent:
             raise ImportError('GeventedHTTPTransport requires gevent.')
-        self._lock = gevent.coros.Semaphore(maximum_outstanding_requests)
+        self._lock = Semaphore(maximum_outstanding_requests)
 
         super(GeventedHTTPTransport, self).__init__(parsed_url)
 
@@ -199,7 +219,7 @@ class GeventedHTTPTransport(HTTPTransport):
 
 class TwistedHTTPTransport(HTTPTransport):
 
-    scheme = ['twisted+http']
+    scheme = ['twisted+http', 'twisted+https']
 
     def __init__(self, parsed_url):
         if not has_twisted:
@@ -241,3 +261,33 @@ class TornadoHTTPTransport(HTTPTransport):
             client = HTTPClient()
 
         client.fetch(self._url, **kwargs)
+
+
+class EventletHTTPTransport(HTTPTransport):
+
+    scheme = ['eventlet+http', 'eventlet+https']
+
+    def __init__(self, parsed_url, pool_size=100):
+        if not has_eventlet:
+            raise ImportError('EventletHTTPTransport requires eventlet.')
+        super(EventletHTTPTransport, self).__init__(parsed_url)
+        # remove the eventlet+ from the protocol, as it is not a real protocol
+        self._url = self._url.split('+', 1)[-1]
+
+    def _send_payload(self, payload):
+        req = eventlet_urllib2.Request(self._url, headers=payload[1])
+        try:
+            if sys.version_info < (2, 6):
+                response = eventlet_urllib2.urlopen(req, payload[0]).read()
+            else:
+                response = eventlet_urllib2.urlopen(req, payload[0],
+                                                    self.timeout).read()
+            return response
+        except Exception, err:
+            return err
+
+    def send(self, data, headers):
+        """
+        Spawn an async request to a remote webserver.
+        """
+        eventlet.spawn(self._send_payload, (data, headers))

@@ -2,7 +2,7 @@
 raven
 ~~~~~
 
-:copyright: (c) 2010 by the Sentry Team, see AUTHORS for more details.
+:copyright: (c) 2010-2012 by the Sentry Team, see AUTHORS for more details.
 :license: BSD, see LICENSE for more details.
 """
 
@@ -14,5 +14,5 @@ try:
 except Exception, e:
     VERSION = 'unknown'
 
-from raven.base import *
-from raven.conf import *
+from raven.base import *  # NOQA
+from raven.conf import *  # NOQA
