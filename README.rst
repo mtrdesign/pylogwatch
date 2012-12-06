@@ -6,7 +6,7 @@ Log file parser, which sends the contents of log files to a centralized Sentry s
 Config
 ==========
 So far the config format is quite simple. It currently looks like this:
-
+::
     DEBUG=True
 
     RAVEN = {
