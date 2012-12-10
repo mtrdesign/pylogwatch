@@ -1,2 +1,4 @@
-v0.1, Nov 29 2012 -- Initial PyPI release.
+v0.1.8-alpha -- File locking for singular execution. 
 v0.1.7-alpha -- Python 2.5 compatibiltiy, README fixes.
+v0.1, Nov 29 2012 -- Initial PyPI release.
+
