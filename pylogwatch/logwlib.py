@@ -147,9 +147,10 @@ class PyLogConf (PyLog):
             data = {'event_type':'Message', 'message': line.replace('%','%%'), 'data' :{'logger':fname}}
             for fobj in self.formatters[fname]:
                 fobj.format_line(line, data, paramdict)
-            if paramdict:
-                data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])
-            if self.conf.DEBUG:
-                print data
-            self.client.capture(**data)
+            if not data.get('do_not_send', False):
+                if paramdict:
+                    data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])
+                if self.conf.DEBUG:
+                    print data
+                self.client.capture(**data)
 
