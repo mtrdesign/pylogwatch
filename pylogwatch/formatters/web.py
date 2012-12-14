@@ -12,11 +12,6 @@ class NginxErrorLogFormatter (BaseFormatter):
     levels = logging._levelNames
     activate_on_fname_suffix = ('error.log','error_log')
 
-    def log(self, mydict):
-        import pprint
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(mydict)
-
     def format_line (self, line, datadict, paramdict):
         try:
             dt = parse (line[:19])
