@@ -1,13 +1,16 @@
 from pylogwatch.formatters.base import BaseFormatter
 from dateutil.parser import parse
+import logging
 
 class GitoliteLogFormatter(BaseFormatter):
     """
     Relies on the following parserts:
     <date>\t<log_block_number>\t<command|empty>\t<details>
 
-    We log only if command == die    
+    We log only if command == die or warn
     """
+
+    levels = logging._levelNames
 
     def format_line (self, line, datadict, paramdict):
         line_parts = line.split('\t')
@@ -15,9 +18,15 @@ class GitoliteLogFormatter(BaseFormatter):
         if len(line_parts) < 3:
             return datadict
 
-        if line_parts[2] != 'die':
+        if line_parts[2] not in ['die', 'warn']:
             datadict['do_not_send'] = True
             return
+
+        # set level
+        loglvl = 'NOTSET'
+        if line_parts[2] == 'die': loglvl = 'ERROR'
+        if line_parts[2] == 'warn': loglvl = 'WARNING'
+        datadict.setdefault('data',{})['level'] = self.levels[loglvl]
 
         try:
             # date is 2012-12-14.15:25:46
