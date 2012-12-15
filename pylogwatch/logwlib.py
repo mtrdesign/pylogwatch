@@ -141,7 +141,7 @@ class PyLogConf (PyLog):
         dbname = os.path.join(os.path.dirname(conf.__file__),'pylogwatch.db')
         return super(PyLogConf, self).__init__ (self.conf.FILE_FORMATTERS.keys(), dbname = dbname)
 
-    def process_lines (self, fname, filobject, lines):
+    def process_lines (self, fname, fileobject, lines):
         """Main workhorse. Called with the filename that is being logged and an iterable of lines"""
         for line in lines:
             paramdict = {}
