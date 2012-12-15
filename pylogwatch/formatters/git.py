@@ -19,7 +19,7 @@ class GitoliteLogFormatter(BaseFormatter):
             return datadict
 
         if line_parts[2] not in ['die', 'warn']:
-            datadict['do_not_send'] = True
+            datadict['_do_not_send'] = True
             return
 
         # set level

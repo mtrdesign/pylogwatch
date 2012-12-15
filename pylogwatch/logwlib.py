@@ -71,13 +71,20 @@ class PyLog (object):
         self.conn.commit()
         return
 
+    def update_bytes (self,fname, lastbyte):
+        """
+        Only updates the lastbyte property of a file, without touching the inode.
+        Meant for calling after each line is processed
+        """
+        def save_fileinfo (self, fname, inode, lastbyte):
+            self.curs.execute ("UPDATE into file_cursor set lastbyte=? where filename=?",\
+                               [fname,inode, lastbyte ])
+            self.conn.commit()
+            return
+
     def process_lines (self, fname, lines):
         """Dummy line processor - should be overridden"""
-        print '##### Processed %s:' % fname
-        for line in lines:
-            print line
-            pass
-        print
+        raise NotImplementedError
 
     def open_rotated_version(self, fname):
         sufxs = ['.1','.1.gz','.0']
@@ -105,12 +112,12 @@ class PyLog (object):
                 if rotated:
                     newlines = self.readlines (rotated, lastbyte)
                     lastbyte = 0
+                    self.process_lines (fn, rotated, newlines)
             try:
                 f = open(fn)
             except:
                 continue
-            newlines = itertools.chain(newlines, self.readlines (f, lastbyte))
-            self.process_lines (fn, newlines)
+            self.process_lines (fn, f, self.readlines (f, lastbyte))
             lastbyte = f.tell()
             lastinode = os.stat(fn)[1]
             f.close()
@@ -121,6 +128,9 @@ class PyLog (object):
 
 class PyLogConf (PyLog):
     def __init__ (self, conf):
+        """
+        Initialize object based on the provided configuration
+        """
         self.conf = conf
         self.client = Client (conf.RAVEN['dsn'])
         self.formatters = {}
@@ -131,26 +141,18 @@ class PyLogConf (PyLog):
         dbname = os.path.join(os.path.dirname(conf.__file__),'pylogwatch.db')
         return super(PyLogConf, self).__init__ (self.conf.FILE_FORMATTERS.keys(), dbname = dbname)
 
-    def get_file_signature(self, fname):
-        maxcount = 10
-        count = 0
-        result = []
-        with open(fname) as f:
-            while count < maxcount:
-                result.append(f.readline())
-                count+=1
-        return result
-
-    def process_lines (self, fname, lines):
+    def process_lines (self, fname, fobj, lines):
+        """Main workhorse. Called with the filename that is being logged and an iterable of lines"""
         for line in lines:
             paramdict = {}
             data = {'event_type':'Message', 'message': line.replace('%','%%'), 'data' :{'logger':fname}}
             for fobj in self.formatters[fname]:
                 fobj.format_line(line, data, paramdict)
-            if not data.get('do_not_send', False):
+            if not data.pop('_do_not_send', False): # Skip lines that have the '_do_not_send' key
                 if paramdict:
                     data['params'] = tuple([paramdict[i] for i in sorted(paramdict.keys())])
                 if self.conf.DEBUG:
                     print data
                 self.client.capture(**data)
+                self.update_bytes(fname, fobj.tell())
 
