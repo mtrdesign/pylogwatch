@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='PyLogWatch',
-    version='0.1.8-alpha',
+    version='0.1.9-alpha',
     author='E. Filipov, MTR Design',
     author_email='pylogwatch@mtr-design.com',
     packages=['pylogwatch','pylogwatch.formatters'],
