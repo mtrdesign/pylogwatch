@@ -21,8 +21,10 @@ if __name__=='__main__':
     options, arguments = p.parse_args()
 
     # Check if we can obtain a lock - make sure we're the only process on this config
-    if not lockfile(os.path.realpath(options.config) + '.lck'):
-        sys.exit ('Cannot obtain a lock on %s' %  os.path.realpath(options.config))
+    lockfn = os.path.realpath(options.config) + '.lck'
+    lockfd = open(lockfn, 'w')
+    if not lockfile(lockfd):
+        sys.exit ('Cannot obtain a lock on %s' %  lockfn)
 
     cfgmod = load_cfg_module(options.config)
     pl = PyLogConf(cfgmod)

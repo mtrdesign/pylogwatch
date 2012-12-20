@@ -6,11 +6,11 @@ import fcntl
 
 def lockfile (lockfile):
     """
-    Create a lockfile. Thanks to http://amix.dk/blog/post/19531
+    Create a and lock the file object supplied in lcokfile.
+    Lockfile should be a file object opened with 'w'.
     """
-    fp = open(lockfile, 'w')
     try:
-        fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.lockf(lockfile, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
         return False
     return True
