@@ -1,3 +1,4 @@
+-- Fixed Apache Error log formatter IP recognition
 v0.1.9-alpha -- Update db records after every captured line. Formatters for Nginx and Gitolite.
 v0.1.8-alpha -- File locking for singular execution. 
 v0.1.7-alpha -- Python 2.5 compatibiltiy, README fixes.

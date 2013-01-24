@@ -2,6 +2,8 @@ from pylogwatch.formatters.base import BaseFormatter
 from dateutil.parser import parse
 
 import logging
+import re
+IP_RE = re.compile(r'.* \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}')
 
 class NginxErrorLogFormatter (BaseFormatter):
     """
@@ -66,7 +68,7 @@ class ApacheErrorLogFormatter (BaseFormatter):
         datadict ['date']= dt
 
         # Add remote IP as a param
-        if len(line_parts)>1:
+        if len(line_parts)>3 and IP_RE.match (line_parts[2]):
             datadict ['message'] = self.replace_param(line, datadict ['message'], line_parts[2].split()[-1], paramdict)
 
         # Add loglevel
